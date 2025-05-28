@@ -1,7 +1,3 @@
-//
-// Created by kasper on 25/05/25.
-//
-
 #include "InMemoryDB.h"
 
 #include <ranges>
@@ -9,14 +5,25 @@
 
 std::optional<std::variant<int, double, std::string>> InMemoryDB::get(const std::string &key) {
     std::scoped_lock lock(mtx_);
-    if (map_.contains(key))
-        return map_[key];
-    return std::nullopt;
+    const auto it = map_.find(key);
+    if (it == map_.end()) return std::nullopt;
+
+    if (it->second.expiry && std::chrono::steady_clock::now() > *it->second.expiry) {
+        map_.erase(it);
+        return std::nullopt;
+    }
+
+    return it->second.value;
 }
 
-void InMemoryDB::set(const ::std::string &key, const std::variant<int, double, std::string> &value) {
+void InMemoryDB::set(const std::string& key, const Value& value, std::optional<int> expirySeconds) {
     std::scoped_lock lock(mtx_);
-    map_[key] = value;
+    std::optional<TimePoint> expiry = std::nullopt;
+
+    if (expirySeconds && *expirySeconds > 0)
+        expiry = std::chrono::steady_clock::now() + std::chrono::seconds(*expirySeconds);
+
+    map_[key] = Entry{value, expiry};
 }
 
 void InMemoryDB::del(const std::string &key) {
@@ -26,7 +33,15 @@ void InMemoryDB::del(const std::string &key) {
 
 bool InMemoryDB::exists(const std::string &key) {
     std::scoped_lock lock(mtx_);
-    return map_.contains(key);
+    const auto it = map_.find(key);
+    if (it == map_.end()) return false;
+
+    if (it->second.expiry && std::chrono::steady_clock::now() > *it->second.expiry) {
+        map_.erase(it);
+        return false;
+    }
+
+    return true;
 }
 
 void InMemoryDB::flush_all() {
@@ -34,10 +49,18 @@ void InMemoryDB::flush_all() {
     map_.clear();
 }
 
-std::vector<std::pair<std::string, std::variant<int, double, std::string>>> InMemoryDB::keys() const {
-    std::vector<std::pair<std::string, std::variant<int, double, std::string>>> keys {};
-    for (const auto &k: map_)
-        keys.emplace_back(k);
+std::vector<std::pair<std::string, std::variant<int, double, std::string>>> InMemoryDB::keys() {
+    std::scoped_lock lock(mtx_);
+    std::vector<std::pair<std::string, std::variant<int, double, std::string>>> keys{};
+
+    const auto now = std::chrono::steady_clock::now();
+
+    for (const auto& [k, v] : map_) {
+        if (!v.expiry || now <= *v.expiry) {
+            keys.emplace_back(k, v.value);
+        }
+    }
+
     return keys;
 }
 
@@ -54,11 +77,17 @@ Result InMemoryDB::adjust(const std::string &key, int delta) {
 
     const auto it = map_.find(key);
     if (it == map_.end()) {
-        map_[key] = delta;
+        map_[key] = Entry{delta, std::nullopt};
         return Result::ok(delta);
     }
 
-    auto& val = it->second;
+    if (it->second.expiry && std::chrono::steady_clock::now() > *it->second.expiry) {
+        map_.erase(it);
+        map_[key] = Entry{delta, std::nullopt};
+        return Result::ok(delta);
+    }
+
+    auto& val = it->second.value;
     if (const auto intVal = std::get_if<int>(&val)) {
         *intVal += delta;
         return Result::ok(*intVal);
@@ -66,7 +95,3 @@ Result InMemoryDB::adjust(const std::string &key, int delta) {
 
     return Result::err("ERR value is not an integer");
 }
-
-
-
-

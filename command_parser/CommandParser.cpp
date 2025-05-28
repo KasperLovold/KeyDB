@@ -20,8 +20,20 @@ std::optional<DBPayload> CommandParser::parse(const std::string &msg) {
     }
     if (op == "SET") {
         std::string rawValue;
-        std::getline(iss >> std::ws, rawValue);
-        return DBPayload{ DBCommand::SET, key, parseValue(rawValue) };
+        iss >> std::ws;
+        std::getline(iss, rawValue, ' ');
+
+        std::string next;
+        std::optional<int> expiry = std::nullopt;
+
+        iss >> next;
+        if (next == "EX") {
+            int seconds;
+            iss >> seconds;
+            expiry = seconds;
+        }
+
+        return DBPayload{ DBCommand::SET, key, parseValue(rawValue), expiry };
     }
     if (op == "DEL") {
         return DBPayload{ DBCommand::DEL, key, std::nullopt };
@@ -44,6 +56,9 @@ std::optional<DBPayload> CommandParser::parse(const std::string &msg) {
     if (op == "DECR") {
         return DBPayload { DBCommand::DECR, key, std::nullopt };
     }
+
+    if (op == "PING")
+        return DBPayload{ DBCommand::PING, key, std::nullopt };
 
     return std::nullopt;
 }

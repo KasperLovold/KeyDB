@@ -18,13 +18,13 @@
 - [X] `KEYS` – list all keys
 - [X] `FLUSHALL` – delete all keys
 - [X] `INCR <key>` – increment integer values
-- [ ] `PING` – health check response (`PONG`)
+- [X] `PING` – health check response (`PONG`)
 
 ---
 
 ### Expiry Support
-- [ ] `SET mykey value EX 10` – expire after 10 seconds
-- [ ] Lazy delete on access if expired
+- [X] `SET mykey value EX 10` – expire after 10 seconds
+- [X] Lazy delete on access if expired
 - [ ] Background cleanup thread
 
 ---

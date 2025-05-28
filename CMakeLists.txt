@@ -3,6 +3,9 @@ project(KeyDB)
 
 set(CMAKE_CXX_STANDARD 20)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 add_executable(KeyDB main.cpp
         connection/Connection.cpp
         connection/Connection.h
@@ -13,4 +16,8 @@ add_executable(KeyDB main.cpp
         handlers/handleClientMessage.cpp
         handlers/handleClientMessage.h
         result/Result.h
+        session/Session.cpp
+        session/Session.h
 )
+
+target_link_libraries(KeyDB PRIVATE Threads::Threads)

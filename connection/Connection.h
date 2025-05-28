@@ -4,39 +4,24 @@
 
 #ifndef CONNECTION_H
 #define CONNECTION_H
-#include <functional>
-#include <thread>
-#include <vector>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
+#include <asio.hpp>
+#include "../session/Session.h"
+#include "../inmem_database/InMemoryDB.h"
+
 
 class Connection {
 public:
-    explicit Connection(size_t port);
-    using MessageCallback = std::function<void(const std::string&, int)>;
-    void start(const MessageCallback& cb);
-    void stop();
+    Connection(asio::io_context& io, uint16_t port);
+
+    void start(InMemoryDB &db);
 
 
 private:
-    void acceptLoop(const MessageCallback& cb) noexcept;
-    void workerLoop(const MessageCallback& cb);
+    void doAccept(InMemoryDB &db);
 
-    std::thread loop_;
-    int serverSocket_{-1};
-    size_t port_;
-    std::thread acceptThread_;
-    std::vector<std::thread> workers_;
-    std::queue<int> clientQueue_;
-    std::mutex queueMutex_;
-    std::condition_variable queueCV_;
-    std::atomic<bool> running_{false};
-
-    const size_t NUM_WORKERS = 4;
+    asio::ip::tcp::acceptor acceptor_;
+    asio::io_context& io_;
 };
-
 
 
 #endif //CONNECTION_H

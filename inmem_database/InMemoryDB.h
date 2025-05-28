@@ -13,21 +13,27 @@
 
 #include "../result/Result.h"
 
+using Value = std::variant<int, double, std::string>;
+using TimePoint = std::chrono::steady_clock::time_point;
+
+struct Entry {
+    Value value;
+    std::optional<TimePoint> expiry;
+};
 
 class InMemoryDB {
 public:
     std::optional<std::variant<int, double, std::string>> get(const std::string &key);
-    void set(const std::string& key, const std::variant<int, double, std::string> &value);
+    void set(const std::string& key, const Value& value, std::optional<int> expirySeconds);
     void del(const std::string &key);
     bool exists(const std::string &key);
     void flush_all();
-    std::vector<std::pair<std::string, std::variant<int, double, std::string>>> keys() const;
+    std::vector<std::pair<std::string, std::variant<int, double, std::string>>> keys();
     Result incr(const std::string& key);
     Result decr(const std::string& key);
 
 private:
-    std::unordered_map<std::string, std::variant<int, double, std::string>> map_;
-    std::mutex mtx_;
+    std::unordered_map<std::string, Entry> map_;    std::mutex mtx_;
     Result adjust(const std::string& key, int delta);
 };
 

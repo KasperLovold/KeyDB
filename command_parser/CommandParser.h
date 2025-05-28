@@ -8,6 +8,8 @@
 #include <string>
 #include <variant>
 
+#include "../inmem_database/InMemoryDB.h"
+
 enum class DBCommand {
     SET,
     GET,
@@ -16,13 +18,17 @@ enum class DBCommand {
     KEYS,
     FLUSHALL,
     INCR,
-    DECR
+    DECR,
+    PING
 };
+
+
 
 struct DBPayload {
     DBCommand command;
     std::string key;
     std::optional<std::variant<int, double, std::string>> data;
+    std::optional<int> expiry;
 };
 
 class CommandParser {
