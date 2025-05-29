@@ -30,8 +30,8 @@
 ---
 
 ### RESP Protocol (Redis Protocol)
-- [ ] Parse RESP commands (arrays, bulk strings)
-- [ ] Send responses in RESP format:
+- [X] Parse RESP commands (arrays, bulk strings)
+- [X] Send responses in RESP format:
     - Simple strings: `+OK\r\n`
     - Errors: `-ERR <msg>\r\n`
     - Bulk strings: `$6\r\nfoobar\r\n`
@@ -52,9 +52,9 @@
 
 ## Phase 4: Advanced Networking
 
-- [ ] Keep connections open (reusable clients)
-- [ ] Command pipelining (batching)
-- [ ] Handle malformed requests gracefully
+- [X] Keep connections open (reusable clients)
+- [X] Command pipelining (batching)
+- [X] Handle malformed requests gracefully
 - [ ] Implement `AUTH <password>` command
 
 ---

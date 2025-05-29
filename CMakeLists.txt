@@ -18,6 +18,10 @@ add_executable(KeyDB main.cpp
         result/Result.h
         session/Session.cpp
         session/Session.h
+        resp_parser/RespParser.h
+        resp_parser/RespObject.h
+        resp_parser/RespObject.cpp
+        resp_parser/RespParser.cpp
 )
 
 target_link_libraries(KeyDB PRIVATE Threads::Threads)

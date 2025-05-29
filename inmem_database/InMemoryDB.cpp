@@ -88,9 +88,21 @@ Result InMemoryDB::adjust(const std::string &key, int delta) {
     }
 
     auto& val = it->second.value;
+
     if (const auto intVal = std::get_if<int>(&val)) {
         *intVal += delta;
         return Result::ok(*intVal);
+    }
+
+    if (const auto strVal = std::get_if<std::string>(&val)) {
+        try {
+            int intParsed = std::stoi(*strVal);
+            intParsed += delta;
+            val = intParsed;
+            return Result::ok(intParsed);
+        } catch (...) {
+            return Result::err("ERR value is not an integer or out of range");
+        }
     }
 
     return Result::err("ERR value is not an integer");

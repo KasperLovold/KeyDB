@@ -34,8 +34,6 @@ struct DBPayload {
 class CommandParser {
 public:
     static std::optional<DBPayload> parse(const std::string &msg);
-
-private:
     static std::variant<int, double, std::string> parseValue(const std::string &msg);
 };
 

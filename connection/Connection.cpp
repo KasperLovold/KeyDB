@@ -4,6 +4,7 @@
 
 #include "Connection.h"
 #include "../handlers/handleClientMessage.h"
+#include "../resp_parser/RespParser.h"
 
 Connection::Connection(asio::io_context& io, const uint16_t port)
     : acceptor_(io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), io_(io) {
@@ -18,8 +19,14 @@ void Connection::doAccept(InMemoryDB& db) {
         if (!ec) {
             const auto session = std::make_shared<Session>(
                 std::move(socket),
-                [&db](const std::string& msg, std::function<void(const std::string&)> send) {
-                    handlers::handle_client_message(msg, std::move(send), db);
+                [&db](std::string& msg, const std::function<void(const std::string&)> &send) {
+                    RespParser parser(msg);
+                    auto obj = parser.parse();
+                    if (!obj) {
+                        send("-ERR malformed RESP message\r\n");
+                        return;
+                    }
+                    handlers::handle_resp_message(*obj, send, db);
                 });
             session->start();
         }

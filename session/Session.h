@@ -14,9 +14,9 @@ using MessageCallback = std::function<void(const std::string&, int)>;
 
 class Session : public std::enable_shared_from_this<Session> {
 public:
-    using ResponseCallback = std::function<void(const std::string& msg,
+    using ResponseCallback = std::function<void(std::string& msg,
                                                 std::function<void(const std::string&)> send)>;
-    Session(asio::ip::tcp::socket socket, const ResponseCallback &callback);
+    Session(asio::ip::tcp::socket socket, ResponseCallback callback);
 
     void start();
 
@@ -27,7 +27,8 @@ private:
     void send(const std::string &message);
 
     asio::ip::tcp::socket socket_;
-    asio::streambuf streambuffer_;
+    std::string rawBuffer_;
+    std::array<char, 4096> buffer_;
     ResponseCallback callback_;
 };
 
